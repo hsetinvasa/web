@@ -1,0 +1,24 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite thread-count="5" configfailurepolicy="skip" verbose="0" name="web Test Suit" skipfailedinvocationcounts="false" annotations="JDK">
+    <test verbose="1" name="Web Test" junit="false">
+        <classes>
+            <!--
+            -->       
+            <class name="y.controller.TestDefaultController"/>       
+        </classes>
+    </test>
+    <test verbose="1" name="Data Test" junit="false">
+        <classes>
+            <!--
+            -->      
+            <class name="y.manager.TestModel"/> 
+        </classes>
+    </test>
+    <test verbose="1" name="Cucumber Test" junit="false">
+        <classes>
+            <!--
+            -->       
+            <class name="y.controller.TestCucumber"/>     
+        </classes>
+    </test>
+</suite> 

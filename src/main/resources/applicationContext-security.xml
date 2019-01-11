@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:c="http://www.springframework.org/schema/c"
+             xmlns:p="http://www.springframework.org/schema/p"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+    <!--chnage enabled to activate funtionality,如需開放相關功能，將值設為enabled-->
+    <global-method-security pre-post-annotations="disabled" secured-annotations="disabled" jsr250-annotations="disabled"/>
+    <!--Disable static path check to save time. 不過濾特定路徑以節省時間-->
+    <http pattern="/images" security="none"/>
+    <http pattern="/css" security="none"/>
+    <http pattern="/scripts" security="none"/>
+    <http pattern="/wro" security="none"/>
+    <http use-expressions="true"  disable-url-rewriting="true"  create-session="always" entry-point-ref="authEntryPoint">
+        <intercept-url pattern="/index" access="permitAll" requires-channel="http"/>
+        <intercept-url pattern="/login" access="permitAll" requires-channel="https"/>
+        <intercept-url pattern="/j_spring_security_check" access="permitAll" requires-channel="https"/>
+        <!--important: Without logout pattern setting result in http accepted only,and redirection from ssl will lost csrf information,
+            若未指定登出的pattern，則登出只接受http連線，從https登出會導到http，以致區丟失csrf資訊-->
+        <intercept-url pattern="/j_spring_security_logout" access="permitAll" requires-channel="any"/>
+        <intercept-url pattern="/changePassword" access="fullyAuthenticated" requires-channel="https"/>
+        <!--http://www.pcnet.idv.tw/pcnet/network/network_ip_addr.htm CIDR expression 表示法-->
+        <intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN') and (hasIpAddress('127.0.0.1') or hasIpAddress('::1') or hasIpAddress('192.168.0.0/16') or hasIpAddress('fd3d:3d60:0682:1e59::/64'))" requires-channel="any"/>
+        <intercept-url pattern="/member/edit/**" access="hasRole('ROLE_ADMIN') and (hasIpAddress('127.0.0.1') or hasIpAddress('::1') or hasIpAddress('192.168.0.0/16') or hasIpAddress('fd3d:3d60:0682:1e59::/64'))" requires-channel="https"/>
+        <intercept-url pattern="/member/update"  access="hasRole('ROLE_ADMIN') and (hasIpAddress('127.0.0.1') or hasIpAddress('::1') or hasIpAddress('192.168.0.0/16') or hasIpAddress('fd3d:3d60:0682:1e59::/64'))" requires-channel="https"/>
+        <intercept-url pattern="/user/**" access="authenticated" requires-channel="any"/>
+        <intercept-url pattern="/json/**" access="isAuthenticated()" requires-channel="any"/>
+        <intercept-url pattern="/**" access="permitAll" requires-channel="http"/>
+        <!--Default value for new s.s version(新版s.s預設值)
+           login-processing-url="login",
+           username-parameter="username",
+           password-parameter="password"-->
+        <form-login login-page="/login" authentication-failure-url="/login?authfailed=true" default-target-url="/index" always-use-default-target="false" username-parameter="j_username" password-parameter="j_password" login-processing-url="/j_spring_security_check"/>
+        <!--login-processing-url="/j_spring_security_check"/>-->
+        <logout  invalidate-session="true" logout-url="/j_spring_security_logout" logout-success-url="/index"/>
+        <session-management session-fixation-protection="none"/>
+        <remember-me key="web" user-service-ref="customUserService"/>
+        <anonymous key="web" username="anonymous"/>
+        <!--Http 403,404 report page. 權限不足403,404時導向網址-->
+        <access-denied-handler error-page="/error?accessDeined=true"/>
+        <!-- http://spring.io/blog/2013/08/21/spring-security-3-2-0-rc1-highlights-csrf-protection/ -->
+        <csrf/>
+        <headers>
+            <cache-control/>
+            <content-type-options/>
+            <frame-options/>
+            <hsts disabled="true"/>
+            <xss-protection/>
+        </headers>
+        <port-mappings>
+            <port-mapping http="8080" https="8443"/> 
+        </port-mappings>
+    </http>
+    
+    <beans:bean id="authEntryPoint" class="y.context.AjaxAwareLoginUrlAuthenticationEntryPoint" scope="singleton" c:loginFormUrl="/login" />
+    
+    <authentication-manager alias="authenticationManager">
+        <!--Determine user roles by yourself.自定義用戶權限-->
+        <authentication-provider user-service-ref="customUserService">
+            <password-encoder hash="plaintext"/>
+        </authentication-provider>
+    </authentication-manager>
+</beans:beans>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                http://www.hazelcast.com/schema/spring http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+    <hz:hazelcast id="hazelcastInstance">
+        <hz:config>
+            <hz:spring-aware />
+            <hz:group name="hazecast-group" password="hazecast-password"/>
+            <hz:properties >
+                <hz:property name="hazelcast.logging.type">log4j2</hz:property>
+            </hz:properties>
+            <hz:network port="5701" port-auto-increment="false">
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:members>127.0.0.1</hz:members>
+                    </hz:tcp-ip>
+                </hz:join> 
+            </hz:network>
+            <hz:map name="spring:session:sessions" time-to-live-seconds="1800">
+                <hz:hot-restart enabled="true" fsync="false"/>
+            </hz:map>
+            <hz:serialization>
+                <hz:serializers>
+                    <hz:serializer type-class="java.lang.Object" class-name="y.context.ObjectStreamSerializer"/>
+                </hz:serializers>
+            </hz:serialization>
+            <hz:hot-restart-persistence enabled="true" validation-timeout-seconds="120" data-load-timeout-seconds="900">
+                <!--hz:base-dir>/tmp/hot-restart</hz:base-dir-->
+            </hz:hot-restart-persistence>
+        </hz:config>
+    </hz:hazelcast>
+    <!--expose spring session map-->
+    <hz:map id="sessionMap" instance-ref="hazelcastInstance" name="spring:session:sessions"/>
+    <hz:map id="anotherMap" instance-ref="hazelcastInstance" name="web:anotherMap" lazy-init="true"/>
+    <hz:atomicLong id="inStock" instance-ref="hazelcastInstance" name="web:instock"/>
+</beans>
